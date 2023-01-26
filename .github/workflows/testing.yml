@@ -1,0 +1,47 @@
+name: Testing workflow
+
+on: [push, pull_request]
+
+jobs:
+  style:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: "Install style checker"
+        run: pip install black
+      - name: "Run style check"
+        run: black --check .
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: "Run pytest"
+        run: python -m pytest
+      - name: "Run unittest"
+        run: python -m test/unit/test_diffusion2d_functions.py
+      - name: "Run unittest"
+        run: python -m test/integration/test_diffusion2d.py
+
+coverage-report:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: "Install coverage package"
+        run: pip installc -U coverage
+      - name: "Run coverage test"
+        run: coverage run -m pytest
+      - name: "Coverage report"
+        run: coverage xml
+
+  
