@@ -1,47 +1,61 @@
-name: Testing workflow
+name: SSE CI/CD
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
-  style:
+  style_check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: '3.x'
       - name: "Install style checker"
         run: pip install black
       - name: "Run style check"
         run: black --check .
+
   test:
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
-      - name: "Run pytest"
+          python-version: '3.x'
+      - name: "Install Dependencies"
+        run: pip install -r requirements.txt
+      - name: "Run Pytest"
         run: python -m pytest
-      - name: "Run unittest"
-        run: python -m test/unit/test_diffusion2d_functions.py
-      - name: "Run unittest"
-        run: python -m test/integration/test_diffusion2d.py
+      - name: "Run Unit-Test"
+        run: python -m unittest
+      - name: "Get Coverage Report"
+        run: coverage run -m pytest
+      - name: "Upload coverage Report as artifact"
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage
+          path: .coverage
+          retention-days: 1
 
-coverage-report:
-    needs: build
+  coverage_report:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
-      - name: "Install coverage package"
-        run: pip installc -U coverage
-      - name: "Run coverage test"
-        run: coverage run -m pytest
-      - name: "Coverage report"
+          python-version: '3.x'
+      - name: "Install Coverage package"
+        run: pip install coverage
+      - name: "Download coverage Artifact"
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage
+      - name: "Create an XML coverage report"
         run: coverage xml
-
-  
+      - name: "Upload xml report as artifact"
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage.xml
+          path: coverage.xml
+          retention-days: 14
